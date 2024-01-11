@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from "express";
+import { IRecipeRequest } from "../interfaces/recipe";
 import jwt from "jsonwebtoken";
-import { AppDataSource } from "./data-source";
-import { User } from "./entity/User";
-import { Recipe } from "./entity/Recipe";
+import { AppDataSource } from "../data-source";
+import { User } from "../entity/User";
+import { Recipe } from "../entity/Recipe";
+import { FindOneOptions } from "typeorm";
 
 require("dotenv").config();
 
@@ -23,7 +25,11 @@ const generateToken = (user: User) => {
 };
 
 // a function to verify a token and attach the user to the request
-const verifyToken = (req: Request, res: Response, next: NextFunction) => {
+const verifyToken = (
+  req: IRecipeRequest,
+  res: Response,
+  next: NextFunction
+) => {
   // get the token from the header
   const token = req.headers["authorization"];
 
@@ -55,7 +61,7 @@ const verifyToken = (req: Request, res: Response, next: NextFunction) => {
 };
 
 // a function to check if the user is an admin
-const checkAdmin = (req: Request, res: Response, next: NextFunction) => {
+const checkAdmin = (req: IRecipeRequest, res: Response, next: NextFunction) => {
   // get the user from the request
   const user = req.user as User;
 
@@ -69,14 +75,27 @@ const checkAdmin = (req: Request, res: Response, next: NextFunction) => {
 };
 
 // a function to check if the user is the owner of a recipe
-const checkOwner = async (req: Request, res: Response, next: NextFunction) => {
+const checkOwner = async (
+  req: IRecipeRequest,
+  res: Response,
+  next: NextFunction
+) => {
   // get the user and the recipe id from the request
   const user = req.user as User;
-  const recipeId = req.params.id;
+  const recipeId = Number(req.params.id);
 
-  // get the recipe from the database
+  // validate the id
+  if (!recipeId) {
+    return res.status(400).json({ message: "Recipe id is required" });
+  }
   const recipeRepository = AppDataSource.getRepository(Recipe);
-  const recipe = await recipeRepository.findOne(recipeId);
+  // get the recipe from the database
+  const options: FindOneOptions<Recipe> = {
+    where: {
+      id: recipeId,
+    },
+  };
+  const recipe = await recipeRepository.findOne(options);
 
   // if no recipe found, return an error
   if (!recipe) {
