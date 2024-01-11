@@ -1,9 +1,10 @@
 import "reflect-metadata";
 import { DataSource } from "typeorm";
 import { User } from "./entity/User";
+import { Recipe } from "./entity/Recipe";
 require("dotenv").config();
 
-let { PGHOST, PGDATABASE, PGUSER, PGPASSWORD, ENDPOINT_ID } = process.env;
+let { PGHOST, PGDATABASE, PGUSER, PGPASSWORD } = process.env;
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -13,8 +14,9 @@ export const AppDataSource = new DataSource({
   password: PGPASSWORD,
   database: PGDATABASE,
   synchronize: true,
+  ssl: true,
   logging: false,
-  entities: [User],
+  entities: [User, Recipe],
   migrations: [],
   subscribers: [],
 });
